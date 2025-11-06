@@ -1,49 +1,3 @@
-# FLock OFF
-
-## A Dataset Quality Competition Network for Machine Learning
-
-FLock OFF is a Bittensor subnet designed to incentivize the creation of high-quality datasets for machine learning. Miners generate and upload datasets to Hugging Face, while validators assess their quality by training LoRA (Low-Rank Adaptation) models on a standardized base model (Qwen/Qwen2.5-1.5B-Instruct) and rewarding miners based on performance.
-
----
-
-## Table of Contents
-
-- [Compute Requirements](#compute-requirements)
-- [Installation](#installation)
-- [How to Run FLock OFF](#how-to-run-flock-off)
-  - [Running a Miner](#running-a-miner)
-  - [Running a Validator](#running-a-validator)
-- [What is a Dataset Competition Network?](#what-is-a-dataset-competition-network)
-  - [Role of a Miner](#role-of-a-miner)
-  - [Role of a Validator](#role-of-a-validator)
-- [Features of FLock OFF](#features-of-flock-off)
-  - [Hugging Face Integration](#hugging-face-integration)
-  - [LoRA Training Evaluation](#lora-training-evaluation)
-
----
-
-## Compute Requirements
-
-### For Validators
-
-Validators perform LoRA training on miners' datasets, requiring significant GPU resources:
-
-- **Recommended GPU:** NVIDIA-RTX 4090 with 24GB VRAM
-- **Minimum GPU:** NVIDIA RTX 3060 with 12GB VRAM  
-- **Storage:** ~50GB SSD
-- **RAM:** 16GB
-- **CPU:** 8-core Intel i7 or equivalent
-
-### For Miners
-
-Miners focus on dataset creation and uploading, requiring minimal compute:
-
-- **GPU:** Not required  
-- **Storage:** ~10GB  
-- **RAM:** 8GB  
-- **Hugging Face Account:** Required with an API token for dataset uploads
-
----
 
 ## Installation
 
@@ -130,16 +84,22 @@ Before mining, prepare the following:
 **Prepare Your Dataset:**
 Use a script, scrape data, or manually curate data.jsonl. Aim for high-quality, diverse user-assistant pairs to maximize validator scores.
 
+!!!!
+generate new dataset for every miner
+python3 prepare_unique_dataset.py
+
+after generate the dataset, run miner script once.
+
 **Run the Miner Script:**
 
 ```bash
 python3 neurons/miner.py \
-  --wallet.name your_coldkey_name \
-  --wallet.hotkey your_hotkey_name \
+  --wallet.name reg \
+  --wallet.hotkey m3 \
   --subtensor.network finney \
-  --hf_repo_id yourusername/my-dataset \
-  --netuid netuid \
-  --dataset_path ./data/data.jsonl \
+  --hf_repo_id darkhorse0811/p6-dataset \ (change just the dataset name for every miner.  dataset name: p6-dataset)
+  --netuid 96 \
+  --dataset_path ./data/1/data.jsonl \ (keep this for every miner)
   --logging.trace
 ```
 
@@ -215,6 +175,57 @@ Replace placeholders:
 
 - Ensure ample storage for datasets and model checkpoints
 - Use --logging.trace to debug training or chain issues
+
+---
+
+## Downloading All Miner Datasets
+
+To download all miner datasets from the FLock subnet for analysis:
+
+```bash
+# Auto-detect FLock subnet and download all datasets
+python3 download_all_miners.py --subtensor.network finney --logging.info
+
+# Or specify netuid directly
+python3 download_all_miners.py --netuid YOUR_NETUID --subtensor.network finney
+```
+
+The script will:
+1. Connect to the Bittensor network
+2. Fetch the metagraph for the FLock subnet
+3. Retrieve all registered miners and their Hugging Face repository info
+4. Download each miner's dataset to `~/data/miner_datasets/miner_<uid>/data.jsonl`
+5. Provide a summary of successful downloads, failures, and skipped miners
+
+For more details, see [README_DOWNLOAD.md](README_DOWNLOAD.md) and [example_usage.md](example_usage.md).
+
+### Sorting Downloaded Datasets
+
+After downloading, sort all datasets alphabetically for consistency:
+
+```bash
+# Sort all downloaded datasets
+python3 sort_all_datasets.py
+
+# Or specify a custom directory
+python3 sort_all_datasets.py --data_dir ~/data/miner_datasets
+```
+
+This ensures consistent ordering across all datasets for easier comparison and duplicate detection. See [README_SORT.md](README_SORT.md) for details.
+
+### Preparing a Unique Dataset for Mining
+
+To create a unique dataset that avoids penalties:
+
+```bash
+# Create unique dataset (250 entries not used by other miners)
+python3 prepare_unique_dataset.py --output_file ./data/my_unique_dataset.jsonl
+
+# Verify it's unique
+python3 check_datasets.py --data_dir ./data
+```
+
+This selects 250 entries from the evaluation dataset that haven't been used by other miners, ensuring your dataset will be properly evaluated by validators.
 
 ---
 
